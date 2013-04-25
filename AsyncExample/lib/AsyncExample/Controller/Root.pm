@@ -42,7 +42,7 @@ sub index :Path :Args(0) {
     IO::Async::Timer::Countdown->new(
       delay => 5,
       on_expire => sub { $cb->(scalar localtime) },
-    )
+    )->start
   );
 
 }
