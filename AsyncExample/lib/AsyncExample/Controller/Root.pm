@@ -1,6 +1,7 @@
 package AsyncExample::Controller::Root;
 use Moose;
 use namespace::autoclean;
+use IO::Async::Timer::Countdown;
 
 BEGIN { extends 'Catalyst::Controller' }
 
@@ -37,13 +38,13 @@ sub index :Path :Args(0) {
     $res->_writer->close;
   };
 
-  my $watcher;
-  $watcher = AnyEvent->timer(
-    after => 5,
-    cb => sub {
-      $cb->(scalar localtime);
-      undef $watcher; # cancel circular-ref
-    });
+    $c->req->env->{'io.async.loop'}->add(
+    IO::Async::Timer::Countdown->new(
+      delay => 5,
+      on_expire => sub { $cb->(scalar localtime) },
+    )
+  );
+
 }
 
 =head1 AUTHOR
