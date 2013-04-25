@@ -34,17 +34,13 @@ sub index :Path :Args(0) {
   my $cb = sub {
     my $message = shift;
     $res->write("Finishing: $message\n");
-    $res->write("DONE");
     $res->_writer->close;
   };
 
-    $c->req->env->{'io.async.loop'}->add(
-    IO::Async::Timer::Countdown->new(
-      delay => 5,
-      on_expire => sub { $cb->(scalar localtime) },
-    )->start
+  $c->req->env->{'io.async.loop'}->watch_time(
+    after => 5,
+    code => sub { $cb->(scalar localtime) },
   );
-
 }
 
 =head1 AUTHOR
