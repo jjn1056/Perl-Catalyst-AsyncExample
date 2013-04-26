@@ -72,7 +72,7 @@ sub finalize_body {
         close $body;
     }
     else {
-        $self->write( $c, $body );
+        $self->write( $c, $body ) if $body;
     }
 
     return;
