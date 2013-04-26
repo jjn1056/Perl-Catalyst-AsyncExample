@@ -1,6 +1,7 @@
 package AsyncExample::Controller::Root;
+
 use Moose;
-use namespace::autoclean;
+use Carp::Always;
 
 BEGIN { extends 'Catalyst::Controller' }
 
