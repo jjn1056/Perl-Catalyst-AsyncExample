@@ -3,7 +3,7 @@ package AsyncExample;
 use Moose;
 use Catalyst;
 
-extends 'Catalyst';
+#extends 'Catalyst';
 
 our $VERSION = '0.01';
 

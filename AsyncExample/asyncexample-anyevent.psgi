@@ -3,7 +3,6 @@
 use strict;
 use warnings;
 
-use AnyEvent::Loop;
 use AnyEvent;
 use AsyncExample;
 

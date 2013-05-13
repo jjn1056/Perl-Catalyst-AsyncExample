@@ -7,15 +7,18 @@ BEGIN { extends 'Catalyst::Controller' }
 
 __PACKAGE__->config(namespace => '');
 
+sub prepare_cb {
+  my $write_fh = pop;
+  return sub {
+    my $message = shift;
+    $write_fh->write("Finishing: $message\n");
+    $write_fh->close;
+  };
+}
+
 sub ioasync :Local :Args(0) {
   my ($self, $c) = @_;
-
-  my $res = $c->res;
-  my $cb = sub {
-    my $message = shift;
-    $res->write("Finishing: $message\n");
-    $res->_writer->close;
-  };
+  my $cb = $self->prepare_cb($c->res->write_fh);
 
   $c->req->env->{'io.async.loop'}->watch_time(
     after => 5,
@@ -25,13 +28,7 @@ sub ioasync :Local :Args(0) {
 
 sub anyevent :Local :Args(0) {
   my ($self, $c) = @_;
-
-  my $res = $c->res;
-  my $cb = sub {
-    my $message = shift;
-    $res->write("Finishing: $message\n");
-    $res->_writer->close;
-  };
+  my $cb = $self->prepare_cb($c->res->write_fh);
 
   my $watcher;
   $watcher = AnyEvent->timer(
