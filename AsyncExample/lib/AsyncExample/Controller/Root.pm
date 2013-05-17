@@ -1,7 +1,7 @@
 package AsyncExample::Controller::Root;
 
 use Moose;
-use Carp::Always;
+use AnyEvent::IO qw(:DEFAULT :flags);
 
 BEGIN { extends 'Catalyst::Controller' }
 
@@ -37,6 +37,34 @@ sub anyevent :Local :Args(0) {
       $cb->(scalar localtime);
       undef $watcher; # cancel circular-ref
     });
+}
+
+sub read_chunk {
+  my ($self, $fh, $wfh) = @_;
+  aio_read $fh, 1024, sub {
+    my ($data) = @_ or
+      return AE::log error => "read from fh: $!";
+    if(length $data) {
+      $wfh->write($data);
+      $self->read_chunk($fh, $wfh);
+    } else {
+      $wfh->close;
+      aio_close $fh, sub { };
+    }
+  }
+}
+
+sub stream :Local Args(0) {
+  my ($self, $c) = @_;
+  my $path = $c->path_to('root','file.png');
+  $c->res->content_type('image/png');
+  my $wfh = $c->res->write_fh;
+  
+  aio_open "$path", O_RDONLY, 0, sub {
+    my ($fh) = @_ or
+      return AE::log error => "$path: $!";
+    $self->read_chunk($fh, $wfh);
+  }
 }
 
 =head1 AUTHOR
