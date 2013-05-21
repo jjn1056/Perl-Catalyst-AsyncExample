@@ -17,7 +17,7 @@
       var socket;
 
       status.textContent = "Not Connected";
-      url.value = "ws://127.0.0.1:5000/anyevent/wsecho";
+      url.value = "[% websocket_url.to_string %]";
       close.disabled = true;
       send.disabled = true;
 

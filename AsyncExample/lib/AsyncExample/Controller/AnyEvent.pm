@@ -6,6 +6,7 @@ use AnyEvent::IO qw(:DEFAULT :flags);
 use AnyEvent::Handle;
 use Protocol::WebSocket::Handshake::Server;
 use Protocol::WebSocket::Frame;
+use Protocol::WebSocket::URL;
 
 extends 'Catalyst::Controller';
 
@@ -60,29 +61,24 @@ sub stream :Local Args(0) {
 }
 
 sub echo :Local Args(0) {
-  my ($self, $c) = @_; 
+  my ($self, $c) = @_;
+  my $uri = $c->req->uri;
+  $c->stash(websocket_url =>
+    Protocol::WebSocket::URL->new(
+      host=>$uri->host, port=>$uri->port, resource_name=>'/anyevent/wsecho'));
+
   $c->forward($c->view('HTML'));
 }
 
 sub wsecho :Local Args(0) {
   my ($self, $c) = @_;
-  my $io = (my $env = $c->req->env)->{'psgix.io'};
-  my $hs = Protocol::WebSocket::Handshake::Server->new_from_psgi($env);
-  my $hd = AnyEvent::Handle->new(
-    fh => $io,
-    on_eof => sub { warn "EOF" },
-    on_error => sub {
-      my ($hdl, $fatal, $msg) = @_;
-      AE::log error => $msg;
-      warn "ERROR $fatal $msg";
-      $hdl->destroy;
-    },
-  );
+  my $io = $c->req->io_fh;
+  my $hs = Protocol::WebSocket::Handshake::Server->new_from_psgi($c->req->env);
+  my $hd = AnyEvent::Handle->new(fh => $io);
 
   $hs->parse($io);
-
   $hd->push_write($hs->to_string);
-  $hd->push_write(Protocol::WebSocket::Frame->new("TEST WRITE")->to_bytes);
+  $hd->push_write(Protocol::WebSocket::Frame->new("Echo Initiated")->to_bytes);
 
   $hd->on_read(sub {
     (my $frame = $hs->build_frame)->append($_[0]->rbuf);
