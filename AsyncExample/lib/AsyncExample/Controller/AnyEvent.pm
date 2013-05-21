@@ -68,19 +68,21 @@ sub wsecho :Local Args(0) {
   my ($self, $c) = @_;
   my $io = (my $env = $c->req->env)->{'psgix.io'};
   my $hs = Protocol::WebSocket::Handshake::Server->new_from_psgi($env);
-  my $hd; $hd = AnyEvent::Handle->new(
+  my $hd = AnyEvent::Handle->new(
     fh => $io,
     on_eof => sub { warn "EOF" },
     on_error => sub {
       my ($hdl, $fatal, $msg) = @_;
       AE::log error => $msg;
+      warn "ERROR $fatal $msg";
       $hdl->destroy;
     },
   );
 
-  $hs->parse($io) || die "Error: ${\$hs->error}";
+  $hs->parse($io);
+
   $hd->push_write($hs->to_string);
-  $hd->push_write(Protocol::WebSocket::Frame->new("ROCKS")->to_bytes);
+  $hd->push_write(Protocol::WebSocket::Frame->new("TEST WRITE")->to_bytes);
 
   $hd->on_read(sub {
     (my $frame = $hs->build_frame)->append($_[0]->rbuf);
@@ -93,67 +95,4 @@ sub wsecho :Local Args(0) {
 }
 
 __PACKAGE__->meta->make_immutable;
-
-
-__END__
-
-
-  my $hs = Protocol::WebSocket::Handshake::Server->new_from_psgi($c->req->env);
-
-
-
-  
-
-
-
-
-
-  my $h; $h = 
-
-
-
-  my $frame = Protocol::WebSocket::Frame->new;
-
-  $h->push_write($hs->to_string);
-
-  $h->on_eof(sub { warn "DONE" });
-  $h->on_read(
-    sub {
-      warn "on read...";
-      $frame->append($_[0]->rbuf);
-      while (my $message = $frame->next) {
-        $h->push_write(Protocol::WebSocket::Frame->new($message)->to_bytes);
-      }
-    });
-
-
-sub wsecho :Local Args(0) {
-  my ($self, $c) = @_;
-  my $wfh = $c->res->write_fh;
-  my $fh = $c->req->env->{'psgix.io'} || die "no io $!";
-  my $hs = Protocol::WebSocket::Handshake::Server->new_from_psgi($c->req->env);
-  my $frame = Protocol::WebSocket::Frame->new;
-
-  $hs->parse($fh) || die "Error: ${\$hs->error}";
-
-  my $h = AnyEvent::Handle->new(
-    fh => $fh,
-    on_oef => sub { warn "DONE" },
-    on_error => sub {
-      my ($hdl, $fatal, $msg) = @_;
-      AE::log error => $msg;
-      $hdl->destroy;
-    },
-    on_read => sub {
-      warn "on read...";
-      my ($hdl, $fatal, $msg) = @_;
-      $frame->append($hdl->rbuf);
-      while (my $message = $frame->next) {
-        $hdl->push_write(Protocol::WebSocket::Frame->new($message)->to_bytes);
-      };
-    }
-  );
-
-  $h->push_write($hs->to_string);
-}
 
