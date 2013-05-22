@@ -12,6 +12,7 @@ requires 'Net::Async::HTTP::Server';
 requires 'Catalyst::Runtime' => '5.90030';
 requires 'Moose';
 requires 'Protocol::WebSocket';
+requires 'JSON';
 
 test_requires 'Test::More' => '0.88';
 

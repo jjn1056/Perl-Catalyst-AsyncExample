@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" ng-app>
+  <head>
+    <title>Example Chat Server</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.1.4/angular.min.js"></script>
+    <script>
+      function ChatCtrl($scope) {
+
+        $scope.status = "Disconnected";
+        $scope.username = "";
+        $scope.socket = "";
+        $scope.checked = 1;
+        $scope.history = new Array;
+
+        $scope.join = function() {
+          socket = new WebSocket('[% websocket_url.to_string %]');
+
+          socket.addEventListener("open", function(event) {
+            $scope.$apply(function() {
+              $scope.status = "Connected";
+              $scope.checked = 0;
+              $scope.username = $scope.new_username;
+              socket.send(
+                angular.toJson({new: $scope.new_username})
+              );
+            });
+          });
+
+          socket.addEventListener("close", function(event) {
+            $scope.$apply(function() {
+              $scope.status = "Disconnected";
+            });
+          });
+
+          socket.addEventListener("message", function(event) {
+            $scope.$apply(function() {
+              $scope.history.push(JSON.parse(event.data));
+            });
+          });
+
+          $scope.socket = socket;
+        };
+
+        $scope.send = function () {
+          $scope.socket.send(
+          angular.toJson({
+            username: $scope.username,
+            message: $scope.message}));
+
+          $scope.message = '';
+        }
+      }
+    </script>
+  </head>
+  <body ng-controller="ChatCtrl">
+    <h1>The Chatroom Example</h1>
+    <ul id="history">
+      <li ng-repeat="item in history">
+        <span ng-bind="item.username"></span>: 
+        <span ng-bind="item.message"></span>
+      </li>
+    </ul>
+    <div>
+      Total Items: <span id="item-count" ng-bind="history.length"></span>
+    </div>
+    <div id="chatbox">
+      Status: <span id="status" ng-bind="status"></span><br />
+
+      <div ng-show="checked">
+        <input id="join" type="button" value="Join" ng-click="join()" />&nbsp;
+        <input id="new_username" ng-model="new_username" /><br />
+      </div>
+      <div ng-hide="checked">  
+        <input id="send" type="button" value="Send" ng-click="send()" />&nbsp;
+        <input id="text" ng-model="message" /><br />
+      </div>
+    </div>
+  </body>
+</html>
