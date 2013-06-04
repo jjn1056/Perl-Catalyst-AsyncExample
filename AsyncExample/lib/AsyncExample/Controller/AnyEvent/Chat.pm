@@ -1,4 +1,4 @@
-package AsyncExample::Controller::Chat;
+package AsyncExample::Controller::AnyEvent::Chat;
 
 use Moose;
 use MooseX::MethodAttributes;
@@ -27,21 +27,17 @@ has 'clients' => (
     clients => 'elements',
     add_client => 'push'});
 
-sub start : Chained('/')
- PathPrefix CaptureArgs(0)
-{
-  my ($self, $ctx) = @_;
-}
+sub start : ChainedParent
+ PathPart('chat') CaptureArgs(0) { }
 
-  sub index : Chained('start')
-   GET PathPart('') Args(0)
+  sub index : Chained('start') PathPart('') GET Args(0)
   {
     my ($self, $ctx) = @_;
     my $uri = $ctx->req->uri;
     $ctx->stash(
       websocket_url => Protocol::WebSocket::URL->new(
         host=>$uri->host, port=>$uri->port,
-          resource_name => '/chat/ws'));
+          resource_name => '/anyevent/chat/ws'));
 
     $ctx->forward($ctx->view('HTML'));
   }
@@ -64,16 +60,16 @@ sub start : Chained('/')
           $decoded = {username=>$user, message=>"Joined!"};
           foreach my $item ($self->history) {
             $hd->push_write(
-             Protocol::WebSocket::Frame->new(
-               encode_json($item))->to_bytes);
+              $hs->build_frame(buffer=>encode_json($item))
+                ->to_bytes);
           }            
         } 
 
         $self->add_to_history($decoded);
         foreach my $client($self->clients) {
           $client->push_write(
-            Protocol::WebSocket::Frame->new(
-              encode_json($decoded))->to_bytes);
+            $hs->build_frame(buffer=>encode_json($decoded))
+              ->to_bytes);
         }
       }
     });
