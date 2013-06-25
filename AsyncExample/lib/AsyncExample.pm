@@ -1,11 +1,6 @@
 package AsyncExample;
 
-use Moose;
 use Catalyst;
-
-#extends 'Catalyst';
-
-our $VERSION = '0.01';
 
 __PACKAGE__->config(
     name => 'AsyncExample',
@@ -42,4 +37,4 @@ it under the same terms as Perl itself.
 
 =cut
 
-1;
+

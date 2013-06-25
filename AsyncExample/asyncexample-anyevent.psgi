@@ -5,4 +5,4 @@ use warnings;
 use AnyEvent;
 use AsyncExample;
 
-my $app = AsyncExample->apply_default_middlewares(AsyncExample->psgi_app);
+my $app = AsyncExample->psgi_app;

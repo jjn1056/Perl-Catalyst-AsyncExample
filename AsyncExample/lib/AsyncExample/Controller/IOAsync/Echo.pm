@@ -1,9 +1,8 @@
-package AsyncExample::Controller::AnyEvent::Echo;
+package AsyncExample::Controller::IOAsync::Echo;
 
 use Moose;
 use MooseX::MethodAttributes;
 use Protocol::WebSocket::Handshake::Server;
-use AnyEvent::Handle;
 
 extends 'Catalyst::Controller';
 
@@ -29,17 +28,8 @@ sub start : ChainedParent
 
     $hs->parse($io);
 
-    my $hd = AnyEvent::Handle->new(fh => $io);
-    $hd->push_write($hs->to_string);
-    $hd->push_write($hs->build_frame(buffer => "Echo Initiated")->to_bytes);
+    $c->req->env->{'io.async.loop'}; ## ???
 
-    $hd->on_read(sub {
-      (my $frame = $hs->build_frame)->append($_[0]->rbuf);
-      while (my $message = $frame->next) {
-        $message = $hs->build_frame(buffer => $message)->to_bytes;
-        $hd->push_write($message);
-      }
-    });
   }
 
 __PACKAGE__->meta->make_immutable;
