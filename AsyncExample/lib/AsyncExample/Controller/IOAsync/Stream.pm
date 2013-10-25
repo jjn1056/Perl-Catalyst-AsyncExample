@@ -16,7 +16,7 @@ sub stream :Chained('start') Args(0) {
   my $path = $c->path_to('root','file.png');
   $c->res->content_type('image/png');
 
-  aio_open "$path", O_RDONLY, 0, sub {
+  aio_open "$path", IO::AIO::O_RDONLY, 0, sub {
     my ($fh) = @_ or
       die "$path: $!";
     $self->read_chunk($fh, $wfh);
