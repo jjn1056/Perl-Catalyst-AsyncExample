@@ -1,10 +1,7 @@
 package AsyncExample::Controller::IOAsync::Stream;
 
-use Moose;
-use MooseX::MethodAttributes;
 use IO::AIO;
-
-extends 'Catalyst::Controller';
+use base  'Catalyst::Controller';
 
 sub start : ChainedParent
  PathPart('') CaptureArgs(0) { }
@@ -39,4 +36,4 @@ sub read_chunk {
   }
 }
 
-__PACKAGE__->meta->make_immutable;
+1;
