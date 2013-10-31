@@ -79,7 +79,6 @@ sub start : ChainedParent
         }
       }
     );
-
   }
 
 __PACKAGE__->meta->make_immutable;
