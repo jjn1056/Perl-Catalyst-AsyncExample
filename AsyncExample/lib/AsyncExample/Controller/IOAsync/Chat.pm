@@ -2,11 +2,9 @@ package AsyncExample::Controller::IOAsync::Chat;
 
 use Moose;
 use MooseX::MethodAttributes;
-use AnyEvent::Handle;
 use Protocol::WebSocket::Handshake::Server;
 use Protocol::WebSocket::Frame;
 use Protocol::WebSocket::URL;
-use Devel::Dwarn;
 use JSON;
 
 extends 'Catalyst::Controller';
@@ -45,71 +43,44 @@ sub start : ChainedParent
 
   sub ws : Chained('start') Args(0)
   {
-    my ($self, $ctx) = @_;
-    my $io = $ctx->req->io_fh;
-    my $hs = Protocol::WebSocket::Handshake::Server->new_from_psgi($ctx->req->env);
+    my ($self, $c) = @_;
+    my $io = $c->req->io_fh;
+    my $hs = Protocol::WebSocket::Handshake::Server
+      ->new_from_psgi($c->req->env);
+
     $self->add_client($io);
-
-    $io->push_on_read(sub {
-      my ($stream, $buffref, $closed) = @_;
-        $hs->parse($$buffref);
+    $io->configure(
+      on_read => sub {
+        my ($stream, $buff, $oef) = @_;
         if($hs->is_done) {
+          (my $frame = $hs->build_frame)->append($$buff);
+          while (my $message = $frame->next) {
+            my $decoded = decode_json $message;
+            if(my $user = $decoded->{new}) {
+              $decoded = {username=>$user, message=>"Joined!"};
+              foreach my $item ($self->history) {
+                $stream->write(
+                  $hs->build_frame(buffer=>encode_json($item))
+                    ->to_bytes);
+              }            
+            }
+            $self->add_to_history($decoded);
+            foreach my $client($self->clients) {
+              $client->write(
+                $hs->build_frame(buffer=>encode_json($decoded))
+                  ->to_bytes);
+            }
+          }
+          return 0;
+        } else {
+          $hs->parse($$buff);
           $stream->write($hs->to_string);
-          my $evented_stream = Net::Async::WebSocket::Protocol->new(transport => $stream);
-          $evented_stream->configure(
-            on_frame => sub {
-              my ( $self, $frame ) = @_;
-              Dwarn \@_;
-
-            },
-          );
+          
         }
-        return 0;
-      },
+      }
     );
-
 
   }
 
 __PACKAGE__->meta->make_immutable;
-
-
-__END__
-
-        $hs->parse($$buffref);
-        if($hs->is_done) {
-          $stream->write($hs->to_string);
-          my $evented_stream = Net::Async::WebSocket::Protocol->new(transport => $stream);
-          $evented_stream->configure(
-            on_frame => sub {
-              my ( $self, $frame ) = @_;
-              Dwarn \@_;
-
-            },
-          );
-        }
-        return 0;
-
-
-          $io->push_on_read(sub {
-            my ( $self, $buffref, $eof ) = @_;
-            (my $frame = $hs->build_frame)->append($buffref);
-            while (my $message = $frame->next) {
-              my $decoded = decode_json $message;
-              if(my $user = $decoded->{new}) {
-                $decoded = {username=>$user, message=>"Joined!"};
-                foreach my $item ($self->history) {
-                  $io->write(
-                    $hs->build_frame(buffer=>encode_json($item))
-                      ->to_bytes);
-                }            
-              } 
-              $self->add_to_history($decoded);
-              foreach my $client($self->clients) {
-                $client->write(
-                  $hs->build_frame(buffer=>encode_json($decoded))
-                    ->to_bytes);
-              }
-            }
-        });
 
