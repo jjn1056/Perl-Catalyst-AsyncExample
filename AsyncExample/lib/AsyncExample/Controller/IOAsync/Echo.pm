@@ -1,11 +1,7 @@
 package AsyncExample::Controller::IOAsync::Echo;
 
-use Moose;
-use MooseX::MethodAttributes;
+use base 'Catalyst::Controller';
 use Protocol::WebSocket::Handshake::Server;
-use AnyEvent::Handle
-
-extends 'Catalyst::Controller';
 
 sub start : ChainedParent
  PathPart('echo') CaptureArgs(0) { }
@@ -46,11 +42,4 @@ sub start : ChainedParent
     );
   }
 
-__PACKAGE__->meta->make_immutable;
-
-
-
-
-
-
-
+1;
