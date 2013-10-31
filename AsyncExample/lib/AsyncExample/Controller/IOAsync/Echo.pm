@@ -3,6 +3,7 @@ package AsyncExample::Controller::IOAsync::Echo;
 use Moose;
 use MooseX::MethodAttributes;
 use Protocol::WebSocket::Handshake::Server;
+use AnyEvent::Handle
 
 extends 'Catalyst::Controller';
 
@@ -26,11 +27,30 @@ sub start : ChainedParent
     my $hs = Protocol::WebSocket::Handshake::Server
       ->new_from_psgi($c->req->env);
 
-    $hs->parse($io);
-
-    $c->req->env->{'io.async.loop'}; ## ???
-
+    $io->configure(
+      on_read => sub {
+        my ($stream, $buff, $oef) = @_;
+        if($hs->is_done) {
+          (my $frame = $hs->build_frame)->append($$buff);
+          while (my $message = $frame->next) {
+            $message = $hs->build_frame(buffer => $message)->to_bytes;
+            $io->write($message);
+          }
+          return 0;
+        } else {
+          $hs->parse($$buff);
+          $io->write($hs->to_string);
+          $io->write($hs->build_frame(buffer => "Echo Initiated")->to_bytes); 
+        }
+      }
+    );
   }
 
 __PACKAGE__->meta->make_immutable;
+
+
+
+
+
+
 
