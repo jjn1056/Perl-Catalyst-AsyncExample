@@ -10,7 +10,7 @@ sub stream :Chained('start') Args(0) {
   my ($self, $c) = @_;
   my $wfh = $c->res->write_fh;
   my $path = $c->path_to('root','lorem.txt');
-  $c->res->content_type('image/png');
+  $c->res->content_type('text/plain');
 
   aio_open "$path", IO::AIO::O_RDONLY, 0, sub {
     my ($fh) = @_ or
