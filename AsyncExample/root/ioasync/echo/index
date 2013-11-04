@@ -24,7 +24,7 @@
       // Create a new connection when the Connect button is clicked
       open.addEventListener("click", function(event) {
         open.disabled = true;
-        socket = new WebSocket(url.value, "echo-protocol");
+        socket = new WebSocket(url.value);
 
         socket.addEventListener("open", function(event) {
           close.disabled = false;

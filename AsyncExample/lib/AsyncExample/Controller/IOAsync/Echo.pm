@@ -11,7 +11,7 @@ sub start : ChainedParent
   sub index :Chained('start') PathPart('') Args(0)
   {
     my ($self, $c) = @_;
-    my $url = $c->uri_for_action($self->action_for('ws2'));
+    my $url = $c->uri_for_action($self->action_for('ws'));
     
     $url->scheme('ws');
     $c->stash(websocket_url => $url);
@@ -35,9 +35,12 @@ sub start : ChainedParent
       }
     );
 
+    my $fh = $io->read_handle;
+    $io->set_handle( undef );
+
     $server->add_child(
       Net::Async::WebSocket::Protocol->new(
-        handle => $io));
+        handle => $fh));
   }
 
   sub ws :Chained('start') Args(0)
