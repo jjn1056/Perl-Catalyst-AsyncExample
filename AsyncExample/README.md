@@ -1,6 +1,6 @@
 Update deps first, then
 
-    cpanm -installdeps .
+    cpanm --installdeps .
     cpanm Catalyst
     
 
